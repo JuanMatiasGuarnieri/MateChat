@@ -203,7 +203,15 @@ export function useWebRTC() {
   }
 
   function playRemoteAudio(socketId, stream) {
-    console.log('Setting up audio for peer:', socketId);
+    console.log('Setting up audio for peer:', socketId, 'Stream tracks:', stream.getTracks().map(t => t.kind));
+
+    const audioTracks = stream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      console.log('No audio tracks in stream!');
+      return;
+    }
+
+    console.log('Audio track:', audioTracks[0].label, 'enabled:', audioTracks[0].enabled);
 
     // Create audio element to force playback
     const audioEl = document.createElement('audio');
@@ -212,6 +220,11 @@ export function useWebRTC() {
     audioEl.playsInline = true;
     audioEl.muted = false;
     audioEl.volume = 1.0;
+
+    // Force enable the track
+    audioTracks.forEach(track => {
+      track.enabled = true;
+    });
 
     audioEl.play().then(() => {
       console.log('Audio element playing for:', socketId);
