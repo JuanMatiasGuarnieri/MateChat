@@ -22,7 +22,21 @@ const io = new Server(httpServer, {
 });
 
 const prisma = new PrismaClient();
-const JWT_SECRET = 'matechat-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'matechat-secret-key-2024';
+
+// Check database connection
+prisma.$on('error', (e) => {
+  console.error('Prisma error:', e);
+});
+
+(async () => {
+  try {
+    await prisma.$connect();
+    console.log('Database connected successfully');
+  } catch (error) {
+    console.error('Database connection error:', error.message);
+  }
+})();
 
 app.use(cors());
 app.use(express.json());
