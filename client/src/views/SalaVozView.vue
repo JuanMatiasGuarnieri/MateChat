@@ -150,7 +150,8 @@ const {
   onSpeaking,
   setPeerVolume,
   cleanup: webrtcCleanup,
-  updateLocalStream
+  updateLocalStream,
+  getAudioContexts
 } = usePeerJS();
 
 let currentStream = null;
@@ -267,7 +268,7 @@ function toggleMute() {
 }
 
 function testAudio() {
-  const contexts = webrtcInstance.getAudioContexts();
+  const contexts = getAudioContexts();
   console.log('Audio contexts:', contexts);
   Object.values(contexts).forEach(ctx => {
     if (ctx.state === 'suspended') {
