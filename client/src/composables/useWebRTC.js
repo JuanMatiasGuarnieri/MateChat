@@ -93,8 +93,22 @@ export function useWebRTC() {
     console.log('Creating call - audio tracks:', audioTracks.length, audioTracks.map(t => ({label: t.label, enabled: t.enabled})));
     
     stream.getTracks().forEach(track => {
-      peerConnection.addTrack(track, stream);
+      const sender = peerConnection.addTrack(track, stream);
+      console.log('Added track, sender:', sender.track?.kind, 'state:', sender.track?.readyState);
     });
+
+    // Force enable audio
+    const senders = peerConnection.getSenders();
+    senders.forEach(sender => {
+      if (sender.track) {
+        sender.track.enabled = true;
+      }
+      // Try to set parameters
+      sender.getParameters().then(params => {
+        console.log('Sender params:', params);
+      });
+    });
+    console.log('Senders after addTrack:', senders.map(s => ({trackKind: s.track?.kind, state: s.track?.readyState})));
 
     const offer = await peerConnection.createOffer();
     const hasAudio = offer.sdp.includes('m=audio');
@@ -116,12 +130,7 @@ export function useWebRTC() {
     }
 
     peers.value[targetSocketId] = peerConnection;
-    
-    const senders = peerConnection.getSenders();
-    console.log('Peer connection created, senders count:', senders.length);
-    senders.forEach(s => {
-      console.log('  Sender track:', s.track?.kind, 'id:', s.track?.id, 'enabled:', s.track?.enabled);
-    });
+    console.log('Peer connection created for', targetSocketId);
 
     // Process any pending candidates after peer is created
     await processPendingCandidates(targetSocketId);

@@ -186,6 +186,7 @@ async function createCall(targetSocketId, username) {
   if (!currentStream) {
     try {
       currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Got user media, tracks:', currentStream.getTracks().map(t => t.kind));
       localStream.value = currentStream;
     } catch (err) {
       console.error('Error getting user media:', err);
@@ -194,6 +195,7 @@ async function createCall(targetSocketId, username) {
   }
   currentStream.getAudioTracks().forEach(track => {
     track.enabled = !muted.value;
+    console.log('Track enabled:', track.enabled, 'muted:', track.muted);
   });
 
   try {
