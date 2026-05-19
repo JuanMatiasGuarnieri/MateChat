@@ -185,7 +185,14 @@ const rtcConfig = {
 async function createCall(targetSocketId, username) {
   if (!currentStream) {
     try {
-      currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      currentStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000
+        }
+      });
       console.log('Got user media, tracks:', currentStream.getTracks().map(t => t.kind));
       localStream.value = currentStream;
     } catch (err) {
@@ -208,7 +215,15 @@ async function createCall(targetSocketId, username) {
 async function answerCall(fromSocketId, offer, username) {
   if (!currentStream) {
     try {
-      currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      currentStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000
+        }
+      });
+      console.log('Answer - Got user media, tracks:', currentStream.getTracks().map(t => t.kind));
       localStream.value = currentStream;
     } catch (err) {
       console.error('Error getting user media:', err);
@@ -217,6 +232,7 @@ async function answerCall(fromSocketId, offer, username) {
   }
   currentStream.getAudioTracks().forEach(track => {
     track.enabled = !muted.value;
+    console.log('Answer - Track enabled:', track.enabled, 'muted:', track.muted);
   });
 
   try {
