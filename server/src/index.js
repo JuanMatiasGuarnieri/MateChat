@@ -366,9 +366,8 @@ function getRoomUsers(roomId) {
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Serve static files in production
+// Serve static files in production (but NOT for /api/* routes)
 if (NODE_ENV === 'production') {
-  // Try multiple possible paths
   let clientPath = path.join(__dirname, '../client/dist');
 
   if (!fs.existsSync(clientPath)) {
@@ -381,9 +380,20 @@ if (NODE_ENV === 'production') {
   console.log('Serving static files from:', clientPath);
   console.log('Path exists:', fs.existsSync(clientPath));
 
-  app.use(express.static(clientPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(clientPath, 'index.html'));
+  // Serve static files only for known extensions
+  app.use(express.static(clientPath, {
+    index: false,
+    dotfiles: 'ignore',
+    extensions: ['html', 'js', 'css', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'webmanifest', 'woff', 'woff2']
+  }));
+
+  // Only serve index.html for routes that don't start with /api
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(clientPath, 'index.html'));
+    } else {
+      next();
+    }
   });
 }
 
