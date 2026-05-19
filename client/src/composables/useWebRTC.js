@@ -228,7 +228,13 @@ export function useWebRTC() {
       return;
     }
 
-    console.log('Audio track:', audioTracks[0].label, 'enabled:', audioTracks[0].enabled);
+    const track = audioTracks[0];
+    console.log('Audio track:', track.label, 'enabled:', track.enabled, 'muted:', track.muted);
+    
+    // Monitor track for data
+    track.onended = () => console.log('Track ended for', socketId);
+    track.onmute = () => console.log('Track muted for', socketId);
+    track.onunmute = () => console.log('Track unmuted for', socketId);
 
     // Create audio element to force playback
     const audioEl = document.createElement('audio');
