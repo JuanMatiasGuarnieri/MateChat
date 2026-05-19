@@ -276,6 +276,10 @@ export function useWebRTC() {
       const average = dataArray.reduce((a, b) => a + b, dataArray.length) / dataArray.length;
       const isSpeaking = average > 20;
 
+      if (isSpeaking) {
+        console.log('Audio level for', socketId, ':', average.toFixed(1), '-> speaking');
+      }
+
       if (onSpeakingCallback) {
         onSpeakingCallback(socketId, isSpeaking);
       }
