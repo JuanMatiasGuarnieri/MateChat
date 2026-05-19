@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js",
-    "db:push": "prisma db push",
+    "start": "npx prisma db push --schema=prisma/schema.prisma && node src/index.js",
+    "db:push": "prisma db push --schema=prisma/schema.prisma",
     "db:generate": "prisma generate --schema=prisma/schema.prisma",
     "postinstall": "prisma generate --schema=prisma/schema.prisma"
   },
