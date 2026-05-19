@@ -44,52 +44,60 @@ app.use(express.json());
 // Health check endpoint that creates tables if needed
 app.get('/api/health', async (req, res) => {
   try {
-    // Try to query the database
+    // Try to create tables if they don't exist
+    try {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "User" (
+          id SERIAL PRIMARY KEY,
+          username TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    } catch (e) {}
+
+    try {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "Room" (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    } catch (e) {}
+
+    try {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "Message" (
+          id SERIAL PRIMARY KEY,
+          content TEXT NOT NULL,
+          "userId" INTEGER NOT NULL,
+          "roomId" INTEGER NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY ("userId") REFERENCES "User"(id),
+          FOREIGN KEY ("roomId") REFERENCES "Room"(id)
+        )
+      `);
+    } catch (e) {}
+
+    try {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "UserRoom" (
+          "userId" INTEGER NOT NULL,
+          "roomId" INTEGER NOT NULL,
+          "joinedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY ("userId", "roomId"),
+          FOREIGN KEY ("userId") REFERENCES "User"(id),
+          FOREIGN KEY ("roomId") REFERENCES "Room"(id)
+        )
+      `);
+    } catch (e) {}
+
+    // Test the connection
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: 'ok', database: 'connected' });
   } catch (error) {
-    // Try to create tables
-    try {
-      await prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS User (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          username TEXT UNIQUE NOT NULL,
-          password TEXT NOT NULL,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      await prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS Room (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      await prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS Message (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          content TEXT NOT NULL,
-          userId INTEGER NOT NULL,
-          roomId INTEGER NOT NULL,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (userId) REFERENCES User(id),
-          FOREIGN KEY (roomId) REFERENCES Room(id)
-        )
-      `);
-      await prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS UserRoom (
-          userId INTEGER NOT NULL,
-          roomId INTEGER NOT NULL,
-          joinedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          PRIMARY KEY (userId, roomId),
-          FOREIGN KEY (userId) REFERENCES User(id),
-          FOREIGN KEY (roomId) REFERENCES Room(id)
-        )
-      `);
-      res.json({ status: 'ok', database: 'created' });
-    } catch (createError) {
-      res.status(500).json({ status: 'error', database: createError.message });
-    }
+    res.status(500).json({ status: 'error', database: error.message });
   }
 });
 
@@ -392,6 +400,20 @@ if (NODE_ENV === 'production') {
   });
 }
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   console.log(`Servidor corriendo en puerto ${PORT} (${NODE_ENV})`);
+
+  // Initialize database tables
+  if (NODE_ENV === 'production') {
+    try {
+      // Create tables using raw SQL
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "User" (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Room" (id SERIAL PRIMARY KEY, name TEXT NOT NULL, "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Message" (id SERIAL PRIMARY KEY, content TEXT NOT NULL, "userId" INTEGER NOT NULL, "roomId" INTEGER NOT NULL, "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "UserRoom" ("userId" INTEGER NOT NULL, "roomId" INTEGER NOT NULL, "joinedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY ("userId", "roomId"))`);
+      console.log('Database tables initialized');
+    } catch (e) {
+      console.log('Tables may already exist:', e.message);
+    }
+  }
 });
