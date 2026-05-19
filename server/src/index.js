@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -299,7 +300,6 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 if (NODE_ENV === 'production') {
   // Try multiple possible paths
   let clientPath = path.join(__dirname, '../client/dist');
-  const fs = require('fs');
 
   if (!fs.existsSync(clientPath)) {
     clientPath = path.join(__dirname, '../../client/dist');
