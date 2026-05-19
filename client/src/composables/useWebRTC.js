@@ -102,13 +102,10 @@ export function useWebRTC() {
     senders.forEach(sender => {
       if (sender.track) {
         sender.track.enabled = true;
+        console.log('Sender track enabled:', sender.track.enabled);
       }
-      // Try to set parameters
-      sender.getParameters().then(params => {
-        console.log('Sender params:', params);
-      });
+      console.log('Sender params:', sender.getParameters());
     });
-    console.log('Senders after addTrack:', senders.map(s => ({trackKind: s.track?.kind, state: s.track?.readyState})));
 
     const offer = await peerConnection.createOffer();
     const hasAudio = offer.sdp.includes('m=audio');
