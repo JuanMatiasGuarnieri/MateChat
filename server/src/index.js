@@ -54,18 +54,22 @@ const authenticateToken = (req, res, next) => {
 };
 
 app.post('/api/register', async (req, res) => {
+  console.log('Register request received');
   try {
     const { username, password } = req.body;
+    console.log('Username:', username);
     if (!username || !password) {
       return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { username } });
+    console.log('Existing user check:', existingUser);
     if (existingUser) {
       return res.status(400).json({ error: 'El usuario ya existe' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('Creating user...');
     const user = await prisma.user.create({
       data: { username, password: hashedPassword }
     });
