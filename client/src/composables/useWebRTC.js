@@ -100,7 +100,11 @@ export function useWebRTC() {
 
     peers.value[targetSocketId] = peerConnection;
     
-    console.log('Peer connection created, senders:', peerConnection.getSenders().map(s => ({track: s.track?.kind, id: s.track?.id})));
+    const senders = peerConnection.getSenders();
+    console.log('Peer connection created, senders count:', senders.length);
+    senders.forEach(s => {
+      console.log('  Sender track:', s.track?.kind, 'id:', s.track?.id, 'enabled:', s.track?.enabled);
+    });
 
     // Process any pending candidates after peer is created
     await processPendingCandidates(targetSocketId);
