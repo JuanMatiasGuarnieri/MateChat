@@ -41,6 +41,58 @@ prisma.$on('error', (e) => {
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint that creates tables if needed
+app.get('/api/health', async (req, res) => {
+  try {
+    // Try to query the database
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'connected' });
+  } catch (error) {
+    // Try to create tables
+    try {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS User (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS Room (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS Message (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          content TEXT NOT NULL,
+          userId INTEGER NOT NULL,
+          roomId INTEGER NOT NULL,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (userId) REFERENCES User(id),
+          FOREIGN KEY (roomId) REFERENCES Room(id)
+        )
+      `);
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS UserRoom (
+          userId INTEGER NOT NULL,
+          roomId INTEGER NOT NULL,
+          joinedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (userId, roomId),
+          FOREIGN KEY (userId) REFERENCES User(id),
+          FOREIGN KEY (roomId) REFERENCES Room(id)
+        )
+      `);
+      res.json({ status: 'ok', database: 'created' });
+    } catch (createError) {
+      res.status(500).json({ status: 'error', database: createError.message });
+    }
+  }
+});
+
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
