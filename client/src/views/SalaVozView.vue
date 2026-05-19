@@ -377,7 +377,12 @@ onMounted(async () => {
       }
     });
 
-    // Voice answer is handled automatically by the composable
+    socket.value.on('voice_answer', async ({ answer, fromSocketId }) => {
+      if (initialized) {
+        console.log('Received voice answer from', fromSocketId);
+        await webrtcInstance.handleVoiceAnswer(fromSocketId, answer);
+      }
+    });
 
     socket.value.on('ice_candidate', async ({ candidate, fromSocketId }) => {
       if (initialized) {

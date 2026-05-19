@@ -79,6 +79,9 @@ export function useWebRTC() {
     });
 
     const offer = await peerConnection.createOffer();
+    const hasAudio = offer.sdp.includes('m=audio');
+    console.log('Offer SDP has audio:', hasAudio);
+    console.log('Offer SDP snippet:', offer.sdp.substring(0, 500));
     await peerConnection.setLocalDescription(offer);
 
     // Don't clear pending candidates, just ensure the array exists
@@ -143,6 +146,7 @@ export function useWebRTC() {
 
     const audioTracks = stream.getAudioTracks();
     console.log('Answering call - audio tracks:', audioTracks.length, audioTracks.map(t => ({label: t.label, enabled: t.enabled})));
+    console.log('Received offer SDP has audio:', offer.sdp.includes('m=audio'));
     
     stream.getTracks().forEach(track => {
       peerConnection.addTrack(track, stream);
@@ -337,6 +341,20 @@ export function useWebRTC() {
     });
   }
 
+  async function handleVoiceAnswer(targetSocketId, answer) {
+    const peerConnection = peers.value[targetSocketId];
+    if (!peerConnection) {
+      console.log('No peer connection found for', targetSocketId);
+      return;
+    }
+    
+    console.log('Received answer SDP has audio:', answer.sdp.includes('m=audio'));
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    console.log('Set remote description from answer for', targetSocketId);
+    
+    await processPendingCandidates(targetSocketId);
+  }
+
   return {
     localStream,
     peers,
@@ -345,6 +363,7 @@ export function useWebRTC() {
     onSpeaking,
     createCall,
     answerCall,
+    handleVoiceAnswer,
     addIceCandidate,
     setPeerVolume,
     processPendingCandidates,
