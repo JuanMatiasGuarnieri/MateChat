@@ -243,29 +243,9 @@ export function useWebRTC() {
   }
 
   function playRemoteAudio(socketId, stream) {
-    console.log('Setting up audio for peer:', socketId, 'Stream tracks:', stream.getTracks().map(t => t.kind));
+    console.log('Setting up audio for peer:', socketId);
 
-    const audioTracks = stream.getAudioTracks();
-    if (audioTracks.length === 0) {
-      console.log('No audio tracks in stream!');
-      return;
-    }
-
-    const track = audioTracks[0];
-    console.log('Audio track:', track.label, 'enabled:', track.enabled, 'muted:', track.muted);
-    
-    // Force unmute - try to get the track to start producing data
-    if (track.muted) {
-      console.log('Track is muted, trying to unmute...');
-      // Create a workaround by recreating the stream
-    }
-    
-    // Monitor track for data
-    track.onended = () => console.log('Track ended for', socketId);
-    track.onmute = () => console.log('Track muted for', socketId);
-    track.onunmute = () => console.log('Track unmuted for', socketId);
-
-    // Create audio element to force playback
+    // Simple approach: just use audio element
     const audioEl = document.createElement('audio');
     audioEl.srcObject = stream;
     audioEl.autoplay = true;
@@ -273,35 +253,27 @@ export function useWebRTC() {
     audioEl.muted = false;
     audioEl.volume = 1.0;
 
-    // Force enable the track
-    audioTracks.forEach(track => {
-      track.enabled = true;
-    });
-
     audioEl.play().then(() => {
-      console.log('Audio element playing for:', socketId);
+      console.log('Audio playing for:', socketId);
     }).catch(e => {
-      console.log('Audio element play error:', e.message);
+      console.log('Play error:', e.message);
     });
 
-    // Ensure audio context is resumed (required for autoplay)
-    if (!audioContexts[socketId]) {
-      audioContexts[socketId] = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    const audioContext = audioContexts[socketId];
+    // Also create audio context
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     if (audioContext.state === 'suspended') {
-      audioContext.resume().then(() => console.log('AudioContext resumed'));
+      audioContext.resume();
     }
 
-    // Create source from stream
     const source = audioContext.createMediaStreamSource(stream);
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = 1.0;
+    
+    source.connect(gainNode);
+    gainNode.connect(audioContext.destination);
 
-    // Create gain node for volume control
-    if (!gainNodes[socketId]) {
-      gainNodes[socketId] = audioContext.createGain();
-      gainNodes[socketId].gain.value = 1.0;
-    }
+    audioContexts[socketId] = audioContext;
+    gainNodes[socketId] = gainNode;
 
     // Create analyser for voice detection
     const analyser = audioContext.createAnalyser();
@@ -309,8 +281,8 @@ export function useWebRTC() {
     analysers[socketId] = analyser;
 
     // Connect: source -> gain -> analyser -> destination
-    source.connect(gainNodes[socketId]);
-    gainNodes[socketId].connect(analyser);
+    source.connect(gainNode);
+    gainNode.connect(analyser);
     analyser.connect(audioContext.destination);
 
     console.log('Audio pipeline connected for:', socketId);
