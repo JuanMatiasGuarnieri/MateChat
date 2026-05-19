@@ -342,9 +342,13 @@ export function useWebRTC() {
   }
 
   async function handleVoiceAnswer(targetSocketId, answer) {
+    console.log('handleVoiceAnswer called with:', targetSocketId);
+    console.log('Current peers keys:', Object.keys(peers.value));
+    
     const peerConnection = peers.value[targetSocketId];
     if (!peerConnection) {
       console.log('No peer connection found for', targetSocketId);
+      console.log('Available peers:', Object.keys(peers.value));
       return;
     }
     
