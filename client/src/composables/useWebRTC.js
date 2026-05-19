@@ -205,6 +205,20 @@ export function useWebRTC() {
   function playRemoteAudio(socketId, stream) {
     console.log('Setting up audio for peer:', socketId);
 
+    // Create audio element to force playback
+    const audioEl = document.createElement('audio');
+    audioEl.srcObject = stream;
+    audioEl.autoplay = true;
+    audioEl.playsInline = true;
+    audioEl.muted = false;
+    audioEl.volume = 1.0;
+
+    audioEl.play().then(() => {
+      console.log('Audio element playing for:', socketId);
+    }).catch(e => {
+      console.log('Audio element play error:', e.message);
+    });
+
     // Ensure audio context is resumed (required for autoplay)
     if (!audioContexts[socketId]) {
       audioContexts[socketId] = new (window.AudioContext || window.webkitAudioContext)();
