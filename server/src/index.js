@@ -114,12 +114,6 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { username } });
-    console.log('Existing user check:', existingUser);
-    if (existingUser) {
-      return res.status(400).json({ error: 'El usuario ya existe' });
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log('Creating user...');
     const user = await prisma.user.create({
@@ -129,7 +123,8 @@ app.post('/api/register', async (req, res) => {
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user.id, username: user.username } });
   } catch (error) {
-    res.status(500).json({ error: 'Error al registrar usuario' });
+    console.error('Register error:', error);
+    res.status(500).json({ error: 'Error al registrar usuario: ' + error.message });
   }
 });
 
