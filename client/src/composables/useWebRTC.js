@@ -71,6 +71,9 @@ export function useWebRTC() {
       }
     };
 
+    const audioTracks = stream.getAudioTracks();
+    console.log('Creating call - audio tracks:', audioTracks.length, audioTracks.map(t => ({label: t.label, enabled: t.enabled})));
+    
     stream.getTracks().forEach(track => {
       peerConnection.addTrack(track, stream);
     });
@@ -138,6 +141,9 @@ export function useWebRTC() {
       }
     };
 
+    const audioTracks = stream.getAudioTracks();
+    console.log('Answering call - audio tracks:', audioTracks.length, audioTracks.map(t => ({label: t.label, enabled: t.enabled})));
+    
     stream.getTracks().forEach(track => {
       peerConnection.addTrack(track, stream);
     });
