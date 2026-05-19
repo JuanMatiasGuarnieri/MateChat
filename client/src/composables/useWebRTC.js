@@ -45,8 +45,9 @@ export function useWebRTC() {
     };
 
     peerConnection.ontrack = (event) => {
-      console.log('Received remote track from', targetSocketId);
+      console.log('Received remote track from', targetSocketId, 'track kind:', event.track.kind, 'track id:', event.track.id);
       const remoteStream = event.streams[0];
+      console.log('Remote stream id:', remoteStream.id, 'tracks:', remoteStream.getTracks().map(t => t.kind));
       peerStreams[targetSocketId] = remoteStream;
       playRemoteAudio(targetSocketId, remoteStream);
     };
@@ -98,6 +99,8 @@ export function useWebRTC() {
     }
 
     peers.value[targetSocketId] = peerConnection;
+    
+    console.log('Peer connection created, senders:', peerConnection.getSenders().map(s => ({track: s.track?.kind, id: s.track?.id})));
 
     // Process any pending candidates after peer is created
     await processPendingCandidates(targetSocketId);
