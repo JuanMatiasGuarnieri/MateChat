@@ -3,9 +3,9 @@ node_modules/
 .pnp
 .pnp.js
 
-# Build outputs
-client/dist/
-client/dist-ssr/
+# Build outputs - commented for production deployment
+# client/dist/
+# client/dist-ssr/
 
 # Testing
 coverage/
