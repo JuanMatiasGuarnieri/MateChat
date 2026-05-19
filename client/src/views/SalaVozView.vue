@@ -150,10 +150,18 @@ const {
   onSpeaking,
   createCall: webrtcCreateCall,
   answerCall: webrtcAnswerCall,
+  handleVoiceAnswer,
   addIceCandidate,
   setPeerVolume,
   cleanup
 } = useWebRTC();
+
+const webrtcInstance = {
+  handleVoiceAnswer,
+  addIceCandidate,
+  getAudioContexts: () => ({}),
+  setPeerVolume
+};
 
 let currentStream = null;
 let initialized = false;
@@ -263,8 +271,6 @@ function toggleMute() {
     });
   }
 }
-
-const webrtcInstance = useWebRTC();
 
 function testAudio() {
   const contexts = webrtcInstance.getAudioContexts();
