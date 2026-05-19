@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: matechat-server
+    env: node
+    region: oregon
+    buildCommand: npm install && npm run db:generate
+    startCommand: npm run start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: matechat-db
+          property: connectionString
+    disks:
+      - name: prisma
+        mountPath: /app/node_modules/.prisma
+        size: 1GB
+
+  - type: postgres
+    name: matechat-db
+    plan: free
+    region: oregon
+    postgresVersion: 16
