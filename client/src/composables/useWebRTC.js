@@ -231,6 +231,12 @@ export function useWebRTC() {
     const track = audioTracks[0];
     console.log('Audio track:', track.label, 'enabled:', track.enabled, 'muted:', track.muted);
     
+    // Force unmute - try to get the track to start producing data
+    if (track.muted) {
+      console.log('Track is muted, trying to unmute...');
+      // Create a workaround by recreating the stream
+    }
+    
     // Monitor track for data
     track.onended = () => console.log('Track ended for', socketId);
     track.onmute = () => console.log('Track muted for', socketId);
