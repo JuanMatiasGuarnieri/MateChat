@@ -24,6 +24,8 @@ const io = new Server(httpServer, {
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'matechat-secret-key-2024';
 
+// Using public PeerJS server - no need for local server
+
 // Check database connection
 prisma.$on('error', (e) => {
   console.error('Prisma error:', e);

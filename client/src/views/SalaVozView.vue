@@ -120,7 +120,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useRoomsStore } from '../stores/rooms';
 import { io } from 'socket.io-client';
-import { useWebRTC } from '../composables/useWebRTC';
+import { usePeerJS } from '../composables/useWebRTC';
 
 const route = useRoute();
 const router = useRouter();
@@ -144,27 +144,19 @@ const userVolumes = ref({});
 
 const {
   localStream,
-  peers,
+  peers: peerConnections,
   initPeer,
-  updateSocket,
+  callPeer,
   onSpeaking,
-  createCall: webrtcCreateCall,
-  answerCall: webrtcAnswerCall,
-  handleVoiceAnswer,
-  addIceCandidate,
   setPeerVolume,
-  cleanup
-} = useWebRTC();
-
-const webrtcInstance = {
-  handleVoiceAnswer,
-  addIceCandidate,
-  getAudioContexts: () => ({}),
-  setPeerVolume
-};
+  cleanup: webrtcCleanup,
+  updateLocalStream
+} = usePeerJS();
 
 let currentStream = null;
 let initialized = false;
+
+let currentPeerId = null;
 
 const iceServers = [
   { urls: 'stun:stun.l.google.com:19302' },
@@ -190,6 +182,7 @@ async function createCall(targetSocketId, username) {
       });
       console.log('Got user media, tracks:', currentStream.getTracks().map(t => t.kind));
       localStream.value = currentStream;
+      updateLocalStream(currentStream);
     } catch (err) {
       console.error('Error getting user media:', err);
       return;
@@ -197,38 +190,31 @@ async function createCall(targetSocketId, username) {
   }
   currentStream.getAudioTracks().forEach(track => {
     track.enabled = !muted.value;
-    console.log('Track enabled:', track.enabled, 'muted:', track.muted);
   });
 
+  // With PeerJS, just call the peer
   try {
-    return await webrtcCreateCall(targetSocketId, username, currentStream);
+    await callPeer(targetSocketId);
+    console.log('Calling peer:', targetSocketId);
   } catch (err) {
-    console.error('Error creating call:', err);
+    console.error('Error calling peer:', err);
   }
 }
 
 async function answerCall(fromSocketId, offer, username) {
+  // With PeerJS, the incoming call is handled automatically by the composable
+  // Just ensure we have a local stream ready
   if (!currentStream) {
     try {
       currentStream = await navigator.mediaDevices.getUserMedia({
         audio: true
       });
-      console.log('Answer - Got user media, tracks:', currentStream.getTracks().map(t => t.kind));
       localStream.value = currentStream;
+      updateLocalStream(currentStream);
     } catch (err) {
       console.error('Error getting user media:', err);
       return;
     }
-  }
-  currentStream.getAudioTracks().forEach(track => {
-    track.enabled = !muted.value;
-    console.log('Answer - Track enabled:', track.enabled, 'muted:', track.muted);
-  });
-
-  try {
-    return await webrtcAnswerCall(fromSocketId, offer, username, currentStream);
-  } catch (err) {
-    console.error('Error answering call:', err);
   }
 }
 
@@ -349,8 +335,13 @@ onMounted(async () => {
       });
 
       if (!initialized) {
-        await initPeer(iceServers, socket.value);
-        updateSocket(socket.value);
+        // Use socket ID as PeerJS ID
+        currentPeerId = socket.value.id;
+        console.log('Initializing PeerJS with ID:', currentPeerId);
+        
+        // Use default PeerJS public server
+        await initPeer(currentPeerId);
+        
         initialized = true;
       }
 
@@ -385,25 +376,8 @@ onMounted(async () => {
       cleanupPeer(socketId);
     });
 
-    socket.value.on('voice_offer', async ({ offer, username, fromSocketId }) => {
-      if (initialized) {
-        await answerCall(fromSocketId, offer, username);
-      }
-    });
-
-    socket.value.on('voice_answer', async ({ answer, fromSocketId }) => {
-      if (initialized) {
-        console.log('Received voice answer from', fromSocketId);
-        await webrtcInstance.handleVoiceAnswer(fromSocketId, answer);
-      }
-    });
-
-    socket.value.on('ice_candidate', async ({ candidate, fromSocketId }) => {
-      if (initialized) {
-        console.log('Received ICE candidate from', fromSocketId);
-        await addIceCandidate(fromSocketId, candidate);
-      }
-    });
+    // With PeerJS, calls are handled automatically via peer.on('call')
+    // No need for voice_offer, voice_answer, ice_candidate handlers
 
     socket.value.on('new_message', (msg) => {
       roomsStore.addMessage(msg);
