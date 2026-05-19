@@ -186,11 +186,7 @@ async function createCall(targetSocketId, username) {
   if (!currentStream) {
     try {
       currentStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: { exact: true },
-          noiseSuppression: { exact: true },
-          autoGainControl: { exact: true }
-        }
+        audio: true
       });
       console.log('Got user media, tracks:', currentStream.getTracks().map(t => t.kind));
       localStream.value = currentStream;
@@ -215,11 +211,7 @@ async function answerCall(fromSocketId, offer, username) {
   if (!currentStream) {
     try {
       currentStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: { exact: true },
-          noiseSuppression: { exact: true },
-          autoGainControl: { exact: true }
-        }
+        audio: true
       });
       console.log('Answer - Got user media, tracks:', currentStream.getTracks().map(t => t.kind));
       localStream.value = currentStream;
