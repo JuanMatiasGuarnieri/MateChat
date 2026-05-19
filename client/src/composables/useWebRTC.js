@@ -62,6 +62,11 @@ export function usePeerJS() {
   function setupCall(peerId, call, answerCall) {
     call.on('stream', (remoteStream) => {
       console.log('Received remote stream from:', peerId);
+      // Skip if it's our own stream
+      if (peerId === peer?.id) {
+        console.log('Skipping own stream');
+        return;
+      }
       playRemoteAudio(peerId, remoteStream);
     });
 
@@ -89,6 +94,11 @@ export function usePeerJS() {
     
     call.on('stream', (remoteStream) => {
       console.log('Received remote stream from:', targetSocketId);
+      // Skip if it's our own stream (avoid feedback in same browser)
+      if (targetSocketId === peer?.id) {
+        console.log('Skipping own stream');
+        return;
+      }
       playRemoteAudio(targetSocketId, remoteStream);
     });
 
