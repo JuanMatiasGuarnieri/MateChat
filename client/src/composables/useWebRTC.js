@@ -71,6 +71,23 @@ export function useWebRTC() {
         peerConnection.restartIce();
       }
     };
+    
+    // Check stats periodically to see if audio is being transmitted
+    const statsInterval = setInterval(async () => {
+      if (peerConnection.connectionState !== 'connected') {
+        clearInterval(statsInterval);
+        return;
+      }
+      const stats = await peerConnection.getStats();
+      stats.forEach(report => {
+        if (report.type === 'outbound-rtp' && report.kind === 'audio') {
+          console.log('Outbound audio RTP for', targetSocketId, ': packetsSent:', report.packetsSent, 'bytesSent:', report.bytesSent);
+        }
+        if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+          console.log('Inbound audio RTP for', targetSocketId, ': packetsReceived:', report.packetsReceived, 'bytesReceived:', report.bytesReceived);
+        }
+      });
+    }, 2000);
 
     const audioTracks = stream.getAudioTracks();
     console.log('Creating call - audio tracks:', audioTracks.length, audioTracks.map(t => ({label: t.label, enabled: t.enabled})));
