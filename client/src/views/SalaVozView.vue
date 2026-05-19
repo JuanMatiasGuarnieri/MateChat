@@ -232,7 +232,7 @@ function connectToExistingUsers() {
 
 function connectToNewUsers(users) {
   const otherUsers = users.filter(u => u.userId !== myUserId.value);
-  const knownSockets = new Set(Object.keys(peers.value));
+  const knownSockets = new Set(Object.keys(peerConnections.value));
   otherUsers.forEach(async (u) => {
     if (!knownSockets.has(u.socketId)) {
       try {
@@ -245,10 +245,10 @@ function connectToNewUsers(users) {
 }
 
 function cleanupPeer(socketId) {
-  const peer = peers.value[socketId];
+  const peer = peerConnections.value[socketId];
   if (peer) {
     peer.close();
-    delete peers.value[socketId];
+    delete peerConnections.value[socketId];
   }
   speakingUsers.value.delete(socketId);
 }
