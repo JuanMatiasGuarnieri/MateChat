@@ -297,8 +297,20 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Serve static files in production
 if (NODE_ENV === 'production') {
-  const clientPath = path.join(__dirname, '../client/dist');
+  // Try multiple possible paths
+  let clientPath = path.join(__dirname, '../client/dist');
+  const fs = require('fs');
+
+  if (!fs.existsSync(clientPath)) {
+    clientPath = path.join(__dirname, '../../client/dist');
+  }
+  if (!fs.existsSync(clientPath)) {
+    clientPath = path.join(__dirname, '../../../client/dist');
+  }
+
   console.log('Serving static files from:', clientPath);
+  console.log('Path exists:', fs.existsSync(clientPath));
+
   app.use(express.static(clientPath));
   app.get('*', (req, res) => {
     res.sendFile(path.join(clientPath, 'index.html'));
