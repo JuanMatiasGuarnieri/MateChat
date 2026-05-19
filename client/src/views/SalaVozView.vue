@@ -294,7 +294,7 @@ function leaveRoom() {
     socket.value.emit('leave_room', { roomId });
     socket.value.disconnect();
   }
-  cleanup();
+  webrtcCleanup();
   router.push('/lobby');
 }
 
@@ -399,7 +399,7 @@ onUnmounted(() => {
     socket.value.emit('leave_room', { roomId });
     socket.value.disconnect();
   }
-  cleanup();
+  webrtcCleanup();
   roomsStore.leaveRoom(roomId);
 });
 
